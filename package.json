@@ -1,0 +1,18 @@
+{
+  "license": "MIT",
+  "main": "main.js",
+  "version": "1.0.0",
+  "name": "molly-fetch",
+  "description": "molly-fetch",
+  "author": "becerraEnamneul",
+  "scripts": {
+    "start": "node main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "molly-js"
+  },
+  "keywords": [
+    "molly-js"
+  ]
+}
