@@ -59,7 +59,7 @@ function fetch( ..._args ) {
             opt.headers['Content-Type'] = 'text/plain';
         } 
     
-        const req = protocol.request( opt,(res) => {
+        const req = new protocol.request( opt,(res) => {
             if( res.headers.location ) return response({
                 url: res.headers.location.replace(/^http.*:\/\//gi,'?href='),
                 headers: res.headers,
