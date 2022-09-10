@@ -16,7 +16,7 @@ function parseURL( ..._args ){
         const protocol  = (/https/gi).test(_args[0]) ? https : http;
         const options = url.parse(_args[0]);
 
-        options.agent   = protocol.Agent({ rejectUnauthorized: false });
+        options.agent   = new protocol.Agent({ rejectUnauthorized: false });
         options.port    = (/https/gi).test(_args[0]) ? 443 : 80;
         options.method  = _args[1]?.method || 'GET';
         options.headers =_args[1]?.headers || {};
@@ -27,7 +27,7 @@ function parseURL( ..._args ){
         const protocol  = (/https/gi).test(_args[0]?.url) ? https : http;
         const options = url.parse(_args[0]?.url);
 
-        options.agent   = protocol.Agent({ rejectUnauthorized: false });
+        options.agent   = new protocol.Agent({ rejectUnauthorized: false });
         options.port    = (/https/gi).test(_args[0]?.url) ? 443 : 80;
         options.method  = _args[0]?.method || 'GET';
         options.headers =_args[0]?.headers || {};
