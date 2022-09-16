@@ -13,7 +13,7 @@ function parseProxy( _args ){
     if( _args[1]?.proxy ) {
 
         opt = new Object();
-        prot = (/$https/i).test(_args[1].proxy.protocol) ? https : http;
+        prot = (/^https/i).test(_args[1].proxy.protocol) ? https : http;
         opt.path  = _args[1].proxy?.path || _args[1]?.url;
         opt.host  = _args[1]?.proxy.host;
         opt.port  = _args[1]?.proxy.port;
@@ -24,7 +24,7 @@ function parseProxy( _args ){
     } else if( _args[0]?.proxy ){
 
         opt = new Object();
-        prot = (/$https/i).test(_args[0].proxy.protocol) ? https : http;
+        prot = (/^https/i).test(_args[0].proxy.protocol) ? https : http;
         opt.path  = _args[0].proxy?.path || _args[0]?.url;
         opt.host  = _args[0].proxy.host; 
         opt.port  = _args[0].proxy.port;
@@ -39,9 +39,9 @@ function parseProxy( _args ){
                      '127.0.0.1';
 
         opt = url.parse( _url );
-        prot = (/$https/i).test( _args[0]?.url || _args[0] ) ? https : http;
+        prot = (/^https/i).test( _args[0]?.url || _args[0] ) ? https : http;
         opt.agent = new prot.Agent(_args[1]?.agent || _args[0]?.agent || { rejectUnauthorized: false });
-        opt.port = typeof opt?.port == 'string' ? +opt.port : (/$https/i).test( _args[0]?.url || _args[0] ) ? 443 : 80;
+        opt.port = typeof opt?.port == 'string' ? +opt.port : (/^https/i).test( _args[0]?.url || _args[0] ) ? 443 : 80;
 
     }
 
