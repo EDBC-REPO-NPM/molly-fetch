@@ -1,18 +1,11 @@
 {
   "license": "MIT",
   "main": "main.js",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "name": "molly-fetch",
-  "description": "molly-fetch",
   "author": "becerraEnamneul",
-  "scripts": {
-    "start": "node main"
-  },
-  "repository": {
-    "type": "git",
-    "url": "molly-js"
-  },
-  "keywords": [
-    "molly-js"
-  ]
+  "scripts": { "start": "node main" },
+  "description": "simple http/https client",
+  "repository": "https://github.com/EDBC-REPO-NPM/molly-fetch",
+  "keywords": [ "molly-js", "http-fetch", "https-fetch"]
 }
