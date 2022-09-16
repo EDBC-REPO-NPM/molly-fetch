@@ -13,10 +13,10 @@ function parseProxy( _args ){
     if( _args[1]?.proxy ) {
 
         opt = new Object();
-        prot = _args[1]?.proxy.protocol=='https' ? https : http;
+        prot = (/$https/i).test(_args[1].proxy.protocol) ? https : http;
+        opt.path  = _args[1].proxy?.path || _args[1]?.url;
         opt.host  = _args[1]?.proxy.host;
         opt.port  = _args[1]?.proxy.port;
-        opt.path  = _args[1].proxy?.path || _args[1]?.url;
         opt.agent = new prot.Agent( _args[1]?.agent || 
             { rejectUnauthorized: false }
         );
@@ -24,22 +24,24 @@ function parseProxy( _args ){
     } else if( _args[0]?.proxy ){
 
         opt = new Object();
-        prot = _args[0].proxy.protocol=='https' ? https : http;
+        prot = (/$https/i).test(_args[0].proxy.protocol) ? https : http;
+        opt.path  = _args[0].proxy?.path || _args[0]?.url;
         opt.host  = _args[0].proxy.host; 
         opt.port  = _args[0].proxy.port;
-        opt.path  = _args[0].proxy?.path || _args[0]?.url;
         opt.agent = new prot.Agent( _args[0]?.agent || 
             { rejectUnauthorized: false }
         );
 
     } else {
 
-        opt = url.parse( _args[0]?.url || _args[0] );
-        prot = (/https/gi).test( _args[0]?.url || _args[0] ) ? https : http;
-        opt.port = (/https/gi).test( _args[0]?.url || _args[0] ) ? 443 : 80;
-        opt.agent = new prot.Agent( 
-            _args[1]?.agent || _args[0]?.agent || { rejectUnauthorized: false }
-        );
+        const _url = _args[0]?.url.replace(/localhost/gi,'127.0.0.1') ||
+                     _args[0]?.replace(/localhost/gi,'127.0.0.1') ||
+                     '127.0.0.1';
+
+        opt = url.parse( _url );
+        prot = (/$https/i).test( _args[0]?.url || _args[0] ) ? https : http;
+        opt.agent = new prot.Agent(_args[1]?.agent || _args[0]?.agent || { rejectUnauthorized: false });
+        opt.port = typeof opt?.port == 'string' ? +opt.port : (/$https/i).test( _args[0]?.url || _args[0] ) ? 443 : 80;
 
     }
 
@@ -54,10 +56,8 @@ function parseURL( _args ){
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
     opt.redirec  = _args[1]?.redirect || _args[0]?.redirect || false; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
-    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'text';
+    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'stream';
     process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
-
-    console.log( _args[1] || _args[0] ,opt.response )
 
     return { opt,prot };
 }
