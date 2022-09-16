@@ -47,8 +47,8 @@ function parseProxy( _args ){
 
     } else {
 
-        const _url = _args[0]?.url.replace(/localhost/gi,'127.0.0.1') ||
-                     _args[0]?.replace(/localhost/gi,'127.0.0.1') ||
+        const _url = _args[0]?.replace(/localhost/gi,'127.0.0.1') ||
+                     _args[0]?.url.replace(/localhost/gi,'127.0.0.1') ||
                      '127.0.0.1';
 
         opt = url.parse( _url );
