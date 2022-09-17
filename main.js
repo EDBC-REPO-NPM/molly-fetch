@@ -67,7 +67,7 @@ function parseURL( _args ){
     opt.redirec  = _args[1]?.redirect || _args[0]?.redirect || true; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
     opt.headers  = _args[1]?.headers || _args[0]?.headers || new Object();
-    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'stream';
+    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'text';
     process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
 
     for( var i in headers ){ opt.headers[i] = !opt.headers[i] ? headers[i] : opt.headers[i]; }
@@ -117,7 +117,11 @@ function fetch( ..._args ){
                 return response(fetch( res.headers.location, options ));
             }
             
-            else if( opt.response == 'text' ) res.data = await body(res);
+            else if( opt.response == 'text' ) try{ 
+                res.data = await body(res);
+                res.data = JSON.parse(res.data);
+            } catch(e) { }
+            
             if( res.statusCode >= 300 ) return reject( res )
             else return response( res );
             
