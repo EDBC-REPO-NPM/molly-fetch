@@ -1,5 +1,7 @@
 const {Buffer} = require('buffer');
+const stream = require('stream');
 const https = require('https');
+const zlib = require('zlib');
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
@@ -67,7 +69,7 @@ function parseURL( _args ){
     opt.redirec  = _args[1]?.redirect || _args[0]?.redirect || true; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
     opt.headers  = _args[1]?.headers || _args[0]?.headers || new Object();
-    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'text';
+    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
     process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
 
     for( var i in headers ){ opt.headers[i] = !opt.headers[i] ? headers[i] : opt.headers[i]; }
@@ -95,6 +97,10 @@ function body( stream ){
     })
 }
 
+function parseResults( res ){
+    return new Object();
+}
+
 /*-------------------------------------------------------------------------------------------------*/
 
 function fetch( ..._args ){
@@ -111,19 +117,26 @@ function fetch( ..._args ){
         }
 
         const req = new prot.request( opt,async(res) => {
+
+            const result = parseResults(res);
             
             if( res.headers.location && opt.redirec ) {
                 const options = typeof _args[0]!='string' ? _args[0] : _args[1];
                 return response(fetch( res.headers.location, options ));
             }
             
-            else if( opt.response == 'text' ) try{ 
-                res.data = await body(res);
-                res.data = JSON.parse(res.data);
+            else if( opt.response == 'json' ) try{ 
+                result.data = await body(res);
+                result.data = JSON.parse(result.data);
             } catch(e) { }
             
-            if( res.statusCode >= 300 ) return reject( res )
-            else return response( res );
+            else if( opt.response == 'text' ) try{ 
+                result.data = await body(res);
+            } catch(e) { }
+            
+            if( res.statusCode >= 300 ) 
+                 return reject( result );
+            else return response( result );
             
         });
     
