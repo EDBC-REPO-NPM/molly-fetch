@@ -154,7 +154,10 @@ function fetch( ..._args ){
                 
                 if( res.statusCode >= 300 ){
 
-                    if( !opt.proxyList ) return reject( schema );
+                    if(!opt?.proxyList ) return reject( schema );
+                    if( opt?.proxyIndex >= opt.proxyList?.length )
+                        return reject( schema );
+
                     opt.proxy = opt.proxyList[ opt.proxyIndex ];
                     opt.proxyIndex++;response(await fetch(opt));
 
