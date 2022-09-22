@@ -1,10 +1,11 @@
 const fetch = require('./main');
 
 fetch({
-    redirect: true, responseType:'stream',
-    url: 'http://arepatv.ml/mierda'
+    url: 'https://www.google.com'
 }).then((res)=>{
-    res.pipe(process.stdout);
+    console.log(res.status);
+    console.log(res.data);
 }).catch((rej)=>{
-    console.log(e)
+    console.log(rej.status);
+    console.log(rej.data);
 });

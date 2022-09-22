@@ -6,51 +6,52 @@ const http = require('http');
 const url = require('url');
 const fs = require('fs');
 
+/*-------------------------------------------------------------------------------------------------*/
+
 const headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'User-Agent': 'Mozilla/5.0 (X11; CrOS x86_64 15054.50.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
     'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
     'Accept-Language': 'es-419,es;q=0.9', 'sec-ch-ua-platform': '"Chrome OS"',
-    'Upgrade-Insecure-Requests': '1', 'Sec-Fetch-Dest': 'document',
+    'Upgrade-Insecure-Requests': '1', 'Sec-Fetch-Dest': 'iframe',
     'Sec-Fetch-Mode': 'navigate', 'Cache-Control': 'no-cache',
     'Connection': 'keep-alive', 'Sec-Fetch-Site': 'none',
     'sec-ch-ua-mobile': '?0', 'Sec-Fetch-User': '?1',
+    'Accept-Encoding': 'br,gzip,deflate',
     'Pragma': 'no-cache',
-}
+};
 
 /*-------------------------------------------------------------------------------------------------*/
 
 function parseProxy( _args ){
 
-    let opt,prot;
+    let opt,prot; 
 
     if( _args[1]?.proxy ) {
 
         opt = new Object();
+        opt.path  = _args[1]?.url || _args[0] || _args[1].proxy?.path;
+
+        opt.currentUrl = opt.path;
         prot = (/^https/i).test(_args[1].proxy.protocol) ? https : http;
-        opt.path  = _args[1].proxy?.path || _args[1]?.url;
-        opt.host  = _args[1]?.proxy.host;
-        opt.port  = _args[1]?.proxy.port;
-        opt.agent = new prot.Agent( _args[1]?.agent || 
-            { rejectUnauthorized: false }
-        );
+        opt.host  = _args[1]?.proxy.host; opt.port = _args[1]?.proxy.port;
+        opt.agent = new prot.Agent(_args[1]?.agent || { rejectUnauthorized: false });
 
     } else if( _args[0]?.proxy ){
 
         opt = new Object();
+        opt.path  = _args[0]?.url || _args[0].proxy?.path;
+
+        opt.currentUrl = opt.path;
         prot = (/^https/i).test(_args[0].proxy.protocol) ? https : http;
-        opt.path  = _args[0].proxy?.path || _args[0]?.url;
-        opt.host  = _args[0].proxy.host; 
-        opt.port  = _args[0].proxy.port;
-        opt.agent = new prot.Agent( _args[0]?.agent || 
-            { rejectUnauthorized: false }
-        );
+        opt.host  = _args[0].proxy.host; opt.port = _args[0].proxy.port;
+        opt.agent = new prot.Agent(_args[0]?.agent ||{ rejectUnauthorized: false });
 
     } else {
 
         let _url = _args[0]?.url || _args[0] || '127.0.0.1';
             _url = _url.replace(/localhost/gi,'127.0.0.1');
-        opt = url.parse( _url );
+        opt = url.parse( _url ); opt.currentUrl = _url;
 
         prot = (/^https/i).test( _args[0]?.url || _args[0] ) ? https : http;
         opt.agent = new prot.Agent(_args[1]?.agent || _args[0]?.agent || { rejectUnauthorized: false });
@@ -64,14 +65,17 @@ function parseProxy( _args ){
 function parseURL( _args ){ 
     
     const { opt,prot } = parseProxy( _args );
+
     opt.body     = _args[1]?.body || _args[0]?.body || null; 
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
     opt.redirec  = _args[1]?.redirect || _args[0]?.redirect || true; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
     opt.headers  = _args[1]?.headers || _args[0]?.headers || new Object();
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
-    process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
 
+    opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
+    opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null; 
+    process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
     for( var i in headers ){ opt.headers[i] = !opt.headers[i] ? headers[i] : opt.headers[i]; }
 
     return { opt,prot };
@@ -97,8 +101,14 @@ function body( stream ){
     })
 }
 
-function parseResults( res ){
-    return new Object();
+function decoding( req,res ){
+    const out = new stream.Transform({ transform(chunk,encoding,next){ this.push(chunk); next(); }})
+    const onError = (e)=>{}; switch ( res.headers['content-encoding'] ) {
+        case 'br': stream.pipeline(res, zlib.createBrotliDecompress(), out, onError); break;
+        case 'deflate': stream.pipeline(res, zlib.createInflate(), out, onError); break;
+        case 'gzip': stream.pipeline(res, zlib.createGunzip(), out, onError); break;
+        default: stream.pipeline(res, out, onError); break;
+    }   return out;
 }
 
 /*-------------------------------------------------------------------------------------------------*/
@@ -109,41 +119,50 @@ function fetch( ..._args ){
         const { opt,prot } = parseURL( _args ); 
         delete opt.headers.host;
 
-        if( opt.headers.range ) 
+        if( opt.headers.range && !opt.headers.nochunked ) 
             opt.headers.range = parseRange(opt.headers.range);
         if( opt.body ){
             opt.headers['Content-Type'] = 'text/plain';
             opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
-        }
+        }   opt.headers.referer = opt.currentUrl;
 
         const req = new prot.request( opt,async(res) => {
+            try{
 
-            const result = parseResults(res);
-            
-            if( res.headers.location && opt.redirec ) {
-                const options = typeof _args[0]!='string' ? _args[0] : _args[1];
-                return response(fetch( res.headers.location, options ));
-            }
-            
-            else if( opt.response == 'json' ) try{ 
-                result.data = await body(res);
-                result.data = JSON.parse(result.data);
-            } catch(e) { }
-            
-            else if( opt.response == 'text' ) try{ 
-                result.data = await body(res);
-            } catch(e) { }
-            
-            if( res.statusCode >= 300 ) 
-                 return reject( result );
-            else return response( result );
-            
-        });
+                if( res.headers.location && opt.redirec ) {
+                    const options = typeof _args[0]!='string' ? _args[0] : _args[1];
+                    return response( await fetch( res.headers.location, options ) );
+                };  const output = decoding(req,res); const schema = {
+                    request: req, response: res,
+                    status: res.statusCode,
+                    headers: res.headers,
+                    config: opt,
+                };  
+                
+                if( opt.response == 'json' ) try{ 
+                    schema.data = await body(output);
+                    schema.data = JSON.parse(schema.data);
+                } catch(e) { }
+                
+                else if( opt.response == 'text' )
+                    schema.data = await body(output);
+                
+                else if( opt.response == 'stream' ) 
+                    schema.data = output;
+                
+                if( res.statusCode >= 300 ){
+
+                    if( !opt.proxyList ) return reject( schema );
+                    opt.proxy = opt.proxyList[ opt.proxyIndex ];
+                    opt.proxyIndex++;response(await fetch(opt));
+
+                } else return response( schema );
+                
+            } catch(e) { reject(e); }
+        }).setTimeout( opt.timeout );
     
-        req.on('error',(e)=>{ reject(e) }); 
-        if(opt.body) req.write(opt.body);
-        req.setTimeout( opt.timeout );
-        req.end();
+        req.on('error',(e)=>{ reject(e); }); 
+        if(opt.body) req.write(opt.body); req.end();
 
     });    
 }
