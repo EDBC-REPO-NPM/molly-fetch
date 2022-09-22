@@ -132,7 +132,7 @@ function fetch( ..._args ){
                 if( res.headers.location && opt.redirec ) {
                     const options = typeof _args[0]!='string' ? _args[0] : _args[1];
                     return response( await fetch( res.headers.location, options ) );
-                };  const output = decoding(req,res); const schema = {
+                };  const schema = {
                     request: req, response: res,
                     status: res.statusCode,
                     headers: res.headers,
@@ -140,15 +140,18 @@ function fetch( ..._args ){
                 };  
                 
                 if( opt.response == 'json' ) try{ 
+                    const output = decoding(req,res);
                     schema.data = await body(output);
                     schema.data = JSON.parse(schema.data);
                 } catch(e) { }
                 
-                else if( opt.response == 'text' )
+                else if( opt.response == 'text' ){
+                    const output = decoding(req,res);
                     schema.data = await body(output);
+                }
                 
                 else if( opt.response == 'stream' ) 
-                    schema.data = output;
+                    schema.data = res;
                 
                 if( res.statusCode >= 300 ){
 
