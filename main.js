@@ -17,7 +17,6 @@ const headers = {
     'Sec-Fetch-Mode': 'navigate', 'Cache-Control': 'no-cache',
     'Connection': 'keep-alive', 'Sec-Fetch-Site': 'none',
     'sec-ch-ua-mobile': '?0', 'Sec-Fetch-User': '?1',
-    'Accept-Encoding': 'br,gzip,deflate',
     'Pragma': 'no-cache',
 };
 
@@ -90,25 +89,23 @@ function parseRange( range ){
 
 function body( stream ){
     return new Promise((response,reject)=>{
-        const raw = new Array();
-        stream.on('data',(chunk)=>{
-            raw.push(chunk);
-        })
-        stream.on('close',()=>{
-            const data = Buffer.concat(raw);
-            response( data.toString() )
-        })
+        const raw = new Array();}); stream.on('close',()=>{
+            const data = Buffer.concat(raw); response( data.toString() )
+        }); stream.on('data',(chunk)=>{ raw.push(chunk); 
     })
 }
 
-function decoding( req,res ){
-    const out = new stream.Transform({ transform(chunk,encoding,next){ this.push(chunk); next(); }})
-    const onError = (e)=>{}; switch ( res.headers['content-encoding'] ) {
-        case 'br': stream.pipeline(res, zlib.createBrotliDecompress(), out, onError); break;
-        case 'deflate': stream.pipeline(res, zlib.createInflate(), out, onError); break;
-        case 'gzip': stream.pipeline(res, zlib.createGunzip(), out, onError); break;
-        default: stream.pipeline(res, out, onError); break;
-    }   return out;
+function decoding( req,res ){ 
+    return new Promise(async(response,reject)=>{
+
+        const out = new stream.PassThrough(); const err = (e)=>{ console.log(e) };
+        switch ( res.headers['content-encoding'] ) {
+            case 'br': await stream.pipeline(res,zlib.createBrotliDecompress(),out,err); response(out); break;
+            case 'deflate': await stream.pipeline(res,zlib.createInflate(),out,err); response(out); break;
+            case 'gzip': await stream.pipeline(res,zlib.createGunzip(),out,err); response(out); break;
+            default: response(res); break;
+        }
+    })
 }
 
 /*-------------------------------------------------------------------------------------------------*/
@@ -132,25 +129,17 @@ function fetch( ..._args ){
                 if( res.headers.location && opt.redirec ) {
                     const options = typeof _args[0]!='string' ? _args[0] : _args[1];
                     return response( await fetch( res.headers.location, options ) );
-                }; const output = decoding(req,res); const schema = {
-                    request: req, response: res,
-                    status: res.statusCode,
-                    headers: res.headers,
-                    config: opt,
-                }; 
+                }; const schema = {
+                    request: req, response: res, config: opt,
+                    status: res.statusCode, headers: res.headers,
+                }; const output = res; //await decoding(req,res); 
                 
-                delete res.headers['content-encoding'];
-                
-                if( opt.response == 'json' ) try{ 
+                if( opt.response == 'text' ) schema.data = await body(output);
+                else if( opt.response == 'stream' ) schema.data = output;
+                else if( opt.response == 'json' ) try{ 
                     schema.data = await body(output);
                     schema.data = JSON.parse(schema.data);
                 } catch(e) { }
-                
-                else if( opt.response == 'text' )
-                    schema.data = await body(output);
-                
-                else if( opt.response == 'stream' )
-                    schema.data = output;
                 
                 if( res.statusCode >= 300 ){
 
