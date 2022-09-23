@@ -67,7 +67,7 @@ function parseURL( _args ){
 
     opt.body     = _args[1]?.body || _args[0]?.body || null; 
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
-    opt.redirect = _args[1]?.redirect || _args[0]?.redirect || true; 
+    opt.redirec  = _args[1]?.redirect || _args[0]?.redirect || true; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
     opt.headers  = _args[1]?.headers || _args[0]?.headers || new Object();
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
@@ -89,10 +89,10 @@ function parseRange( range ){
 
 function body( stream ){
     return new Promise((response,reject)=>{
-        const raw = new Array();}); stream.on('close',()=>{
+        const raw = new Array(); stream.on('close',()=>{
             const data = Buffer.concat(raw); response( data.toString() )
-        }); stream.on('data',(chunk)=>{ raw.push(chunk); 
-    })
+        }); stream.on('data',(chunk)=>{ raw.push(chunk); })
+    }); 
 }
 
 function decoding( req,res ){ 
@@ -126,7 +126,7 @@ function fetch( ..._args ){
         const req = new prot.request( opt,async(res) => {
             try{
 
-                if( res.headers.location && opt.redirect ) {
+                if( res.headers.location && opt.redirec ) {
                     const options = typeof _args[0]!='string' ? _args[0] : _args[1];
                     return response( await fetch( res.headers.location, options ) );
                 }; const schema = {
