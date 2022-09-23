@@ -9,15 +9,16 @@ const fs = require('fs');
 /*-------------------------------------------------------------------------------------------------*/
 
 const headers = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'User-Agent': 'Mozilla/5.0 (X11; CrOS x86_64 15054.50.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+    "user-agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.107.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'user-agent': 'Mozilla/5.0 (X11; CrOS x86_64 15054.50.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
     'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
-    'Accept-Language': 'es-419,es;q=0.9', 'sec-ch-ua-platform': '"Chrome OS"',
-    'Upgrade-Insecure-Requests': '1', 'Sec-Fetch-Dest': 'iframe',
-    'Sec-Fetch-Mode': 'navigate', 'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive', 'Sec-Fetch-Site': 'none',
+    'accept-language': 'es-419,es;q=0.9', 'sec-ch-ua-platform': '"Chrome OS"',
+    'upgrade-insecure-requests': '1', 'Sec-Fetch-Dest': 'iframe',
+    'sec-fetch-mode': 'navigate', 'Cache-Control': 'no-cache',
+    'connection': 'keep-alive', 'Sec-Fetch-Site': 'none',
     'sec-ch-ua-mobile': '?0', 'Sec-Fetch-User': '?1',
-    'Pragma': 'no-cache',
+    'pragma': 'no-cache',
 };
 
 /*-------------------------------------------------------------------------------------------------*/
@@ -65,17 +66,31 @@ function parseURL( _args ){
     
     const { opt,prot } = parseProxy( _args );
 
+    opt.headers  = new Object();
     opt.body     = _args[1]?.body || _args[0]?.body || null; 
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
     opt.redirect = _args[1]?.redirect || _args[0]?.redirect || true; 
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
-    opt.headers  = _args[1]?.headers || _args[0]?.headers || new Object();
+    tmp_headers  = _args[1]?.headers || _args[0]?.headers || new Object();
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
 
     opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
     opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null; 
     process.chunkSize = _args[1]?.chunkSize || _args[0].chunkSize || Math.pow(10,6) * 3;
-    for( var i in headers ){ opt.headers[i] = !opt.headers[i] ? headers[i] : opt.headers[i]; }
+
+    for( var i in headers ){ 
+        const key = i.match(/\w+/gi).map(x=>{
+            const st = x.match(/^\w/gi).join('');
+            return x.replace(st,st.toLowerCase());
+        }).join('-'); opt.headers[key] = headers[i]
+    }
+
+    for( var i in tmp_headers ){ 
+        const key = i.match(/\w+/gi).map(x=>{
+            const st = x.match(/^\w/gi).join('');
+            return x.replace(st,st.toLowerCase());
+        }).join('-'); opt.headers[key] = tmp_headers[i]
+    }
 
     return { opt,prot };
 }
