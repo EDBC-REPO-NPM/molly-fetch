@@ -8,6 +8,8 @@ const fs = require('fs');
 
 /*-------------------------------------------------------------------------------------------------*/
 
+const mime = JSON.parse( fs.readFileSync(`${__dirname}/mimeType.json`) );
+
 const headers = {
     "user-agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.107.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -123,24 +125,31 @@ function decoding( req,res ){
     })
 }
 
+function parseBody( opt ){
+    if( (/^\?/i).test(opt.body) ){ opt.body = opt.body.replace(/^\?/i,'');
+        opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    } else if( typeof opt.body == 'object' ){ opt.body = JSON.stringify(opt.body);
+        opt.headers['Content-Type'] = 'application/json';
+    } else if( (/^file:/i).test(opt.body) ){ const path = opt.body.replace(/^file:/i,'');
+        opt.body = fs.readFileSync( path ); mime.some((x,i)=>{ const regex = new RegExp(`${x}$`,'i'); 
+            if( !regex.test(path) ){ opt.headers['Content-Type'] = 'text/plain'; return false; } 
+            else { opt.headers['Content-Type'] = mime[x]; return true; }
+        })
+    } else { opt.body = opt.body; opt.headers['Content-Type'] = 'text/plain'; }
+    opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
+}
+
 /*-------------------------------------------------------------------------------------------------*/
 
 function fetch( ..._args ){
     return new Promise((response,reject)=>{
  
-        const { opt,prot } = parseURL( _args ); 
+        let { opt,prot } = parseURL( _args ); 
         delete opt.headers.host;
 
         if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
-        if( typeof opt.body == 'string' ){
-            opt.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
-            opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
-        }
-        else if( typeof opt.body == 'object' ){ stringed = JSON.stringify(opt.body);
-            opt.headers['Content-Type'] = 'application/json; charset=UTF-8';
-            opt.headers['Content-Length'] = Buffer.byteLength(stringed);
-        }   opt.headers.referer = opt.currentUrl;
-            opt.headers.origin = opt.currentUrl;
+            opt.headers.referer = opt.currentUrl; opt.headers.origin = opt.currentUrl;
+        if( opt.body ){ opt = parseBody( opt ); }   
 
         const req = new prot.request( opt,async(res) => {
             try{
