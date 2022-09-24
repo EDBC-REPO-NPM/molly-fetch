@@ -131,12 +131,16 @@ function fetch( ..._args ){
         const { opt,prot } = parseURL( _args ); 
         delete opt.headers.host;
 
-        if( opt.headers.range && !opt.headers.nochunked ) 
-            opt.headers.range = parseRange(opt.headers.range);
-        if( opt.body ){
-            opt.headers['Content-Type'] = 'text/plain';
+        if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
+        if( typeof opt.body == 'string' ){
+            opt.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
             opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
+        }
+        else if( typeof opt.body == 'object' ){ stringed = JSON.stringify(opt.body);
+            opt.headers['Content-Type'] = 'application/json; charset=UTF-8';
+            opt.headers['Content-Length'] = Buffer.byteLength(stringed);
         }   opt.headers.referer = opt.currentUrl;
+            opt.headers.origin = opt.currentUrl;
 
         const req = new prot.request( opt,async(res) => {
             try{
