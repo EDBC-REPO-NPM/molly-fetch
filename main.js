@@ -154,9 +154,12 @@ function fetch( ..._args ){
         const req = new prot.request( opt,async(res) => {
             try{
 
-                if( res.headers.location && opt.redirect ) {
+                if( res.headers.location && opt.redirect ) { let newURL = ''
+                    if( !(/^http/i).test(res.headers.location) )
+                         newURL = `${opt.protocol}//${opt.hostname}${res.headers.location}`;
+                    else newURL = res.headers.location;
                     const options = typeof _args[0]!='string' ? _args[0] : _args[1];
-                    return response( await fetch( res.headers.location, options ) );
+                    return response( await fetch( newURL, options ) );
                 }; const schema = {
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
