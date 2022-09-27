@@ -126,17 +126,18 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    if( (/^\?/i).test(opt.body) ){ opt.body = opt.body.replace(/^\?/i,'');
-        opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    } else if( typeof opt.body == 'object' ){ opt.body = JSON.stringify(opt.body);
+    if( typeof opt.body == 'object' ){ opt.body = JSON.stringify(opt.body);
         opt.headers['Content-Type'] = 'application/json';
+    } else if( (/^\?/i).test(opt.body) ){ opt.body = opt.body.replace(/^\?/i,'');
+        opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     } else if( (/^file:/i).test(opt.body) ){ const path = opt.body.replace(/^file:/i,'');
         opt.body = fs.readFileSync( path ); mime.some((x,i)=>{ const regex = new RegExp(`${x}$`,'i'); 
             if( !regex.test(path) ){ opt.headers['Content-Type'] = 'text/plain'; return false; } 
             else { opt.headers['Content-Type'] = mime[x]; return true; }
         })
-    } else { opt.body = opt.body; opt.headers['Content-Type'] = 'text/plain'; }
-    opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
+    } else if( !opt.headers['Content-Type'] ) { 
+        opt.headers['Content-Type'] = 'text/plain'; 
+    }   opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
 }
 
 /*-------------------------------------------------------------------------------------------------*/
