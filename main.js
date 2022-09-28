@@ -173,7 +173,7 @@ function fetch( ..._args ){
                     schema.data = JSON.parse(schema.data);
                 } catch(e) { }
                 
-                if( res.statusCode >= 300 ){
+                if( res.statusCode >= 400 ){
 
                     if(!opt?.proxyList ) return reject( schema );
                     if( opt?.proxyIndex >= opt.proxyList?.length )
