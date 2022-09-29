@@ -72,8 +72,8 @@ function parseURL( _args ){
     opt.body     = _args[1]?.body || _args[0]?.body || null; 
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
     opt.redirect = _args[1]?.redirect || _args[0]?.redirect || true; 
-    opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 60 * 1000 ;
     tmp_headers  = _args[1]?.headers || _args[0]?.headers || new Object();
+    opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 100 * 60 * 1000 ;
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
 
     opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
