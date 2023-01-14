@@ -6,7 +6,7 @@ const http = require('http');
 const url = require('url');
 const fs = require('fs');
 
-/*-------------------------------------------------------------------------------------------------*/
+/*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 const mime = JSON.parse( fs.readFileSync(`${__dirname}/mimeType.json`) );
 
@@ -23,7 +23,7 @@ const headers = {
     'pragma': 'no-cache',
 };
 
-/*-------------------------------------------------------------------------------------------------*/
+/*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 function parseProxy( _args ){
 
@@ -114,9 +114,7 @@ function body( stream ){
 
 function decoding( req,res ){ 
     return new Promise(async(response,reject)=>{
-
-        const out = new stream.PassThrough(); const err = (e)=>{ console.log(e) };
-        switch ( res.headers['content-encoding'] ) {
+        const out = new stream.PassThrough(), err = (e)=>{ }; switch ( res.headers['content-encoding'] ) {
             case 'br': await stream.pipeline(res,zlib.createBrotliDecompress(),out,err); response(out); break;
             case 'deflate': await stream.pipeline(res,zlib.createInflate(),out,err); response(out); break;
             case 'gzip': await stream.pipeline(res,zlib.createGunzip(),out,err); response(out); break;
@@ -140,7 +138,7 @@ function parseBody( opt ){
     }   opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
 }
 
-/*-------------------------------------------------------------------------------------------------*/
+/*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 function fetch( ..._args ){
     return new Promise((response,reject)=>{
@@ -164,7 +162,7 @@ function fetch( ..._args ){
                 }; const schema = {
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
-                }; const output = res; //await decoding(req,res); 
+                }; const output = await decoding(req,res);  
                 
                 if( opt.response == 'text' ) schema.data = await body(output);
                 else if( opt.response == 'stream' ) schema.data = output;
@@ -193,6 +191,6 @@ function fetch( ..._args ){
     });    
 }
 
-/*-------------------------------------------------------------------------------------------------*/
+/*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 module.exports = fetch;

@@ -1,10 +1,15 @@
 const fetch = require('./main');
 
 fetch({
-    url: 'https://www.google.com'
+    url: 'https://hottler.xyz/',
+    responseType: 'stream',
+    headers: {
+        'Accept-Encoding': 'gzip, deflate, br'
+    }
 }).then((res)=>{
     console.log(res.status);
-    console.log(res.data);
+    console.log(res.headers); 
+    res.data.on('data',(c)=>console.log(c.toString()))
 }).catch((rej)=>{
     console.log(rej.status);
     console.log(rej.data);
