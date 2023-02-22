@@ -11,7 +11,6 @@ const fs = require('fs');
 const mime = JSON.parse( fs.readFileSync(`${__dirname}/mimeType.json`) );
 
 const headers = {
-    "user-agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.107.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'user-agent': 'Mozilla/5.0 (X11; CrOS x86_64 15054.50.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
     'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
@@ -165,6 +164,7 @@ function fetch( ..._args ){
                 }; const output = await decoding(req,res);  
                 
                 if( opt.response == 'text' ) schema.data = await body(output);
+                else if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
                 else if( opt.response == 'stream' ) schema.data = output;
                 else if( opt.response == 'json' ) try{ 
                     schema.data = await body(output);
