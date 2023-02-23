@@ -11,6 +11,7 @@ const fs = require('fs');
 const mime = JSON.parse( fs.readFileSync(`${__dirname}/mimeType.json`) );
 
 const headers = {
+    "user-agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.107.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'user-agent': 'Mozilla/5.0 (X11; CrOS x86_64 15054.50.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
     'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
@@ -70,10 +71,14 @@ function parseURL( _args ){
     opt.headers  = new Object();
     opt.body     = _args[1]?.body || _args[0]?.body || null; 
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
-    opt.redirect = _args[1]?.redirect || _args[0]?.redirect || true; 
     tmp_headers  = _args[1]?.headers || _args[0]?.headers || new Object();
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 100 * 60 * 1000 ;
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
+
+    opt.decode   = !( !_args[1]?.decode && !_args[0]?.decode );
+    opt.redirect = !( !_args[1]?.decode && !_args[0]?.decode ); 
+
+    console.log( opt.decode );
 
     opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
     opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null; 
@@ -161,10 +166,11 @@ function fetch( ..._args ){
                 }; const schema = {
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
-                }; const output = await decoding(req,res);  
+                }; const output = !opt.decode ? res : await decoding(req,res); 
                 
+                console.log( opt.decode, _args );
+
                 if( opt.response == 'text' ) schema.data = await body(output);
-                else if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
                 else if( opt.response == 'stream' ) schema.data = output;
                 else if( opt.response == 'json' ) try{ 
                     schema.data = await body(output);
