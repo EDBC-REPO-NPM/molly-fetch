@@ -78,8 +78,6 @@ function parseURL( _args ){
     opt.decode   = !( !_args[1]?.decode && !_args[0]?.decode );
     opt.redirect = !( !_args[1]?.decode && !_args[0]?.decode ); 
 
-    console.log( opt.decode );
-
     opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
     opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null; 
     process.chunkSize = _args[1]?.chunkSize || _args[0]?.chunkSize || Math.pow(10,6) * 3;
