@@ -165,8 +165,6 @@ function fetch( ..._args ){
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
                 }; const output = !opt.decode ? res : await decoding(req,res); 
-                
-                console.log( opt.decode, _args );
 
                 if( opt.response == 'text' ) schema.data = await body(output);
                 else if( opt.response == 'stream' ) schema.data = output;
