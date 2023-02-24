@@ -113,6 +113,12 @@ function body( stream ){
     }); 
 }
 
+function mimeType( _path ){
+	for(let key of Object.keys(mime)){ 
+		if( _path.endsWith(key) ) return mime[key];
+	}	return 'text/plain';
+}
+
 function decoding( req,res ){ 
     return new Promise(async(response,reject)=>{
         const out = new stream.PassThrough(), err = (e)=>{ }; switch ( res.headers['content-encoding'] ) {
@@ -125,18 +131,17 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    if( typeof opt.body == 'object' ){ opt.body = JSON.stringify(opt.body);
+    if( typeof opt.body == 'object' ){ 
+        opt.body = JSON.stringify(opt.body);
         opt.headers['Content-Type'] = 'application/json';
-    } else if( (/^\?/i).test(opt.body) ){ opt.body = opt.body.replace(/^\?/i,'');
+    } else if( (/^\?/i).test(opt.body) ){ 
+        opt.body = opt.body.replace(/^\?/i,'');
         opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    } else if( (/^file:/i).test(opt.body) ){ const path = opt.body.replace(/^file:/i,'');
-        opt.body = fs.readFileSync( path ); mime.some((x,i)=>{ const regex = new RegExp(`${x}$`,'i'); 
-            if( !regex.test(path) ){ opt.headers['Content-Type'] = 'text/plain'; return false; } 
-            else { opt.headers['Content-Type'] = mime[x]; return true; }
-        })
-    } else if( !opt.headers['Content-Type'] ) { 
-        opt.headers['Content-Type'] = 'text/plain'; 
-    }   opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
+    } else if( (/^file:/i).test(opt.body) ){ 
+        const path = opt.body.replace(/^file:/i,'');
+        opt.headers['Content-Type'] = mimeType(path); opt.body = fs.readFileSync(path); 
+    } else if( !opt.headers['Content-Type'] ) { opt.headers['Content-Type'] = 'text/plain'; }   
+    opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
 }
 
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
@@ -145,6 +150,7 @@ function fetch( ..._args ){
     return new Promise((response,reject)=>{
  
         let { opt,prot } = parseURL( _args ); 
+        const range = opt.headers.range;
         delete opt.headers.host;
 
         if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
@@ -154,12 +160,11 @@ function fetch( ..._args ){
         const req = new prot.request( opt,async(res) => {
             try{
 
-                if( res.headers.location && opt.redirect ) { let newURL = ''
+                if( res.headers.location && opt.redirect ) { let newURL = '';
+                    const options = typeof _args[0]!='string' ? _args[0] : _args[1];
                     if( !(/^http/i).test(res.headers.location) )
                          newURL = `${opt.protocol}//${opt.hostname}${res.headers.location}`;
-                    else newURL = res.headers.location;
-                    const options = typeof _args[0]!='string' ? _args[0] : _args[1];
-                    return response( await fetch( newURL, options ) );
+                    else newURL = res.headers.location; return response( await fetch(newURL,options) );
                 }; const schema = {
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
