@@ -63,32 +63,32 @@ function parseProxy( _args ){
     return { opt,prot };
 }
 
-function parseURL( _args ){ 
-    
+function parseURL( _args ){
+
     const { opt,prot } = parseProxy( _args );
 
     opt.headers  = new Object();
-    opt.body     = _args[1]?.body || _args[0]?.body || null; 
+    opt.body     = _args[1]?.body || _args[0]?.body || null;
     opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
     tmp_headers  = _args[1]?.headers || _args[0]?.headers || new Object();
     opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 100 * 60 * 1000 ;
     opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
 
     opt.decode   = !( !_args[1]?.decode && !_args[0]?.decode );
-    opt.redirect = !( !_args[1]?.decode && !_args[0]?.decode ); 
+    opt.redirect = !( !_args[1]?.decode && !_args[0]?.decode );
 
     opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
-    opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null; 
+    opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null;
     process.chunkSize = _args[1]?.chunkSize || _args[0]?.chunkSize || Math.pow(10,6) * 3;
 
-    for( var i in headers ){ 
+    for( var i in headers ){
         const key = i.match(/\w+/gi).map(x=>{
             const st = x.match(/^\w/gi).join('');
             return x.replace(st,st.toLowerCase());
         }).join('-'); opt.headers[key] = headers[i]
     }
 
-    for( var i in tmp_headers ){ 
+    for( var i in tmp_headers ){
         const key = i.match(/\w+/gi).map(x=>{
             const st = x.match(/^\w/gi).join('');
             return x.replace(st,st.toLowerCase());
@@ -110,16 +110,16 @@ function body( stream ){
         const raw = new Array(); stream.on('close',()=>{
             const data = Buffer.concat(raw); response( data.toString() )
         }); stream.on('data',(chunk)=>{ raw.push(chunk); })
-    }); 
+    });
 }
 
 function mimeType( _path ){
-	for(let key of Object.keys(mime)){ 
+	for(let key of Object.keys(mime)){
 		if( _path.endsWith(key) ) return mime[key];
 	}	return 'text/plain';
 }
 
-function decoding( req,res ){ 
+function decoding( req,res ){
     return new Promise(async(response,reject)=>{
         const out = new stream.PassThrough(), err = (e)=>{ }; switch ( res.headers['content-encoding'] ) {
             case 'br': await stream.pipeline(res,zlib.createBrotliDecompress(),out,err); response(out); break;
@@ -131,13 +131,13 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    if( typeof opt.body == 'object' ){ 
+    if( typeof opt.body == 'object' ){
         opt.body = JSON.stringify(opt.body);
         opt.headers['Content-Type'] = 'application/json';
-    } else if( (/^\?/i).test(opt.body) ){ 
+    } else if( (/^\?/i).test(opt.body) ){
         opt.body = opt.body.replace(/^\?/i,'');
         opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    } else if( (/^file:/i).test(opt.body) ){ 
+    } else if( (/^file:/i).test(opt.body) ){
         const path = opt.body.replace(/^file:/i,'');
         opt.headers['Content-Type'] = mimeType(path); opt.body = fs.readFileSync(path); 
     } else if( !opt.headers['Content-Type'] ) { opt.headers['Content-Type'] = 'text/plain'; }   
@@ -148,14 +148,14 @@ function parseBody( opt ){
 
 function fetch( ..._args ){
     return new Promise((response,reject)=>{
- 
-        let { opt,prot } = parseURL( _args ); 
+
+        let { opt,prot } = parseURL( _args );
         const range = opt.headers.range;
         delete opt.headers.host;
 
         if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
             opt.headers.referer = opt.currentUrl; opt.headers.origin = opt.currentUrl;
-        if( opt.body ){ opt = parseBody( opt ); }   
+        if( opt.body ){ opt = parseBody( opt ); }
 
         const req = new prot.request( opt,async(res) => {
             try{
@@ -173,11 +173,11 @@ function fetch( ..._args ){
                 if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
                 else if( opt.response == 'text' ) schema.data = await body(output);
                 else if( opt.response == 'stream' ) schema.data = output;
-                else if( opt.response == 'json' ) try { 
+                else if( opt.response == 'json' ) try {
                     schema.data = await body(output);
                     schema.data = JSON.parse(schema.data);
                 } catch(e) { }
-                
+
                 if( res.statusCode >= 400 ){
 
                     if(!opt?.proxyList ) return reject( schema );
@@ -188,14 +188,14 @@ function fetch( ..._args ){
                     opt.proxyIndex++;response(await fetch(opt));
 
                 } else return response( schema );
-                
+
             } catch(e) { reject(e); }
         }).setTimeout( opt.timeout );
-    
-        req.on('error',(e)=>{ reject(e); }); 
+
+        req.on('error',(e)=>{ reject(e); });
         if(opt.body) req.write(opt.body); req.end();
 
-    });    
+    });
 }
 
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
