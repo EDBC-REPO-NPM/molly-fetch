@@ -166,9 +166,10 @@ function fetch( ..._args ){
                     status: res.statusCode, headers: res.headers,
                 }; const output = !opt.decode ? res : await decoding(req,res); 
 
-                if( opt.response == 'text' ) schema.data = await body(output);
+                if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
+                else if( opt.response == 'text' ) schema.data = await body(output);
                 else if( opt.response == 'stream' ) schema.data = output;
-                else if( opt.response == 'json' ) try{ 
+                else if( opt.response == 'json' ) try { 
                     schema.data = await body(output);
                     schema.data = JSON.parse(schema.data);
                 } catch(e) { }
