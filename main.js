@@ -8,7 +8,72 @@ const fs = require('fs');
 
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
-const mime = JSON.parse( fs.readFileSync(`${__dirname}/mimeType.json`) );
+const mime = {
+	
+	"txt" : "text/plain",
+	"text": "text/plain",
+	
+	"otf" : "font/otf",
+	"ttf" : "font/ttf",
+	"woff": "font/woff",
+	"woff2":"font/woff2",
+	
+	"oga" : "audio/ogg",
+	"aac" : "audio/aac",
+	"wav" : "audio/wav",
+	"mp3" : "audio/mpeg",
+	"opus": "audio/opus",
+	"weba": "audio/webm",
+	
+	"ogv" : "video/ogg",
+	"mp4" : "video/mp4",
+	"ts"  : "video/mp2t",
+	"webm": "video/webm",
+	"mpeg": "video/mpeg",
+	"avi" : "video/x-msvideo",
+	
+	"css" : "text/css",
+	"csv" : "text/csv",
+	"html": "text/html",
+	"scss": "text/scss",
+	"ics" : "text/calendar",
+	"js"  : "text/javascript",
+	"xml" : "application/xhtml+xml",
+
+	"bmp" : "image/bmp",
+	"gif" : "image/gif",
+	"png" : "image/png",
+	"jpg" : "image/jpeg",
+	"jpeg": "image/jpeg",
+	"webp": "image/webp",
+	"svg" : "image/svg+xml",
+	"ico" : "image/vnd.microsoft.icon",
+	
+	"zip" : "application/zip",
+	"gz"  : "application/gzip",
+	"sh"  : "application/x-sh",
+	"json": "application/json",
+	"tar" : "application/x-tar",
+	"rar" : "application/vnd.rar",
+	"7z"  : "application/x-7z-compressed",
+	"m3u8": "application/vnd.apple.mpegurl",
+	
+	"pdf" : "application/pdf",
+	"doc" : "application/msword",
+	"vsd" : "application/vnd.visio",
+	"xls" : "application/vnd.ms-excel",
+	"ppt" : "application/vnd.ms-powerpoint",
+	"swf" : "application/x-shockwave-flash",
+	"ods" : "application/vnd.oasis.opendocument.spreadsheet",
+	"odp" : "application/vnd.oasis.opendocument.presentation",
+	"odt" : "application/vnd.oasis.opendocument.presentation",
+	"xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	"docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	"pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    
+};
+
+/*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 const headers = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -26,7 +91,7 @@ const headers = {
 
 function parseProxy( arg ){
 
-    let opt,prot; 
+    let opt,prot;
 
     if( arg[1]?.proxy ) {
 
@@ -131,7 +196,7 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    //opt.headers['Content-Length'] = Buffer.byteLength(opt.body); 
+    //opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
     if( !( opt.body instanceof stream ) ){
         if( typeof opt.body == 'object' ){
             opt.headers['Content-Type'] = 'application/json';
@@ -141,12 +206,12 @@ function parseBody( opt ){
             opt.body = stream.Readable.from( opt.body.replace(/^\?/i,'') );
         } else if( (/^file:/i).test(opt.body) ){
             const path = opt.body.replace(/^file:/i,'');
-            opt.headers['Content-Type'] = mimeType(path); 
-            opt.body = fs.createReadStream(path); 
-        } else if( !opt.headers['Content-Type'] ) { 
-            opt.headers['Content-Type'] = 'text/plain'; 
+            opt.headers['Content-Type'] = mimeType(path);
+            opt.body = fs.createReadStream(path);
+        } else if( !opt.headers['Content-Type'] ) {
+            opt.headers['Content-Type'] = 'text/plain';
             opt.body = stream.Readable.from( opt.body );
-        }   
+        }
     }   return opt;
 }
 
@@ -174,7 +239,7 @@ function fetch( ...arg ){
                 }; const schema = {
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
-                }; const output = !opt.decode ? res : await decoding(req,res); 
+                }; const output = !opt.decode ? res : await decoding(req,res);
 
                 if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
                 else if( opt.response == 'text' ) schema.data = await body(output);
