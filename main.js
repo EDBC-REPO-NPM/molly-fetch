@@ -24,62 +24,62 @@ const headers = {
 
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
-function parseProxy( _args ){
+function parseProxy( arg ){
 
     let opt,prot; 
 
-    if( _args[1]?.proxy ) {
+    if( arg[1]?.proxy ) {
 
         opt = new Object();
-        opt.path  = _args[1]?.url || _args[0] || _args[1].proxy?.path;
+        opt.path  = arg[1]?.url || arg[0] || arg[1].proxy?.path;
 
         opt.currentUrl = opt.path;
-        prot = (/^https/i).test(_args[1].proxy.protocol) ? https : http;
-        opt.host  = _args[1]?.proxy.host; opt.port = _args[1]?.proxy.port;
-        opt.agent = new prot.Agent(_args[1]?.agent || { rejectUnauthorized: false });
+        prot = (/^https/i).test(arg[1].proxy.protocol) ? https : http;
+        opt.host  = arg[1]?.proxy.host; opt.port = arg[1]?.proxy.port;
+        opt.agent = new prot.Agent(arg[1]?.agent || { rejectUnauthorized: false });
 
-    } else if( _args[0]?.proxy ){
+    } else if( arg[0]?.proxy ){
 
         opt = new Object();
-        opt.path  = _args[0]?.url || _args[0].proxy?.path;
+        opt.path  = arg[0]?.url || arg[0].proxy?.path;
 
         opt.currentUrl = opt.path;
-        prot = (/^https/i).test(_args[0].proxy.protocol) ? https : http;
-        opt.host  = _args[0].proxy.host; opt.port = _args[0].proxy.port;
-        opt.agent = new prot.Agent(_args[0]?.agent ||{ rejectUnauthorized: false });
+        prot = (/^https/i).test(arg[0].proxy.protocol) ? https : http;
+        opt.host  = arg[0].proxy.host; opt.port = arg[0].proxy.port;
+        opt.agent = new prot.Agent(arg[0]?.agent ||{ rejectUnauthorized: false });
 
     } else {
 
-        let _url = _args[0]?.url || _args[0] || '127.0.0.1';
+        let _url = arg[0]?.url || arg[0] || '127.0.0.1';
             _url = _url.replace(/localhost/gi,'127.0.0.1');
         opt = url.parse( _url ); opt.currentUrl = _url;
 
-        prot = (/^https/i).test( _args[0]?.url || _args[0] ) ? https : http;
-        opt.agent = new prot.Agent(_args[1]?.agent || _args[0]?.agent || { rejectUnauthorized: false });
-        opt.port = typeof opt?.port == 'string' ? +opt.port : (/^https/i).test( _args[0]?.url || _args[0] ) ? 443 : 80;
+        prot = (/^https/i).test( arg[0]?.url || arg[0] ) ? https : http;
+        opt.agent = new prot.Agent(arg[1]?.agent || arg[0]?.agent || { rejectUnauthorized: false });
+        opt.port = typeof opt?.port == 'string' ? +opt.port : (/^https/i).test( arg[0]?.url || arg[0] ) ? 443 : 80;
 
     }
 
     return { opt,prot };
 }
 
-function parseURL( _args ){
+function parseURL( arg ){
 
-    const { opt,prot } = parseProxy( _args );
+    const { opt,prot } = parseProxy( arg );
 
     opt.headers  = new Object();
-    opt.body     = _args[1]?.body || _args[0]?.body || null;
-    opt.method   = _args[1]?.method || _args[0]?.method || 'GET';
-    tmp_headers  = _args[1]?.headers || _args[0]?.headers || new Object();
-    opt.timeout  = _args[1]?.timeout || _args[0]?.timeout || 100 * 60 * 1000 ;
-    opt.response = _args[1]?.responseType || _args[0]?.responseType || 'json';
+    opt.body     = arg[1]?.body || arg[0]?.body || null;
+    opt.method   = arg[1]?.method || arg[0]?.method || 'GET';
+    tmp_headers  = arg[1]?.headers || arg[0]?.headers || new Object();
+    opt.timeout  = arg[1]?.timeout || arg[0]?.timeout || 100 * 60 * 1000 ;
+    opt.response = arg[1]?.responseType || arg[0]?.responseType || 'json';
 
-    opt.decode   = !( !_args[1]?.decode && !_args[0]?.decode );
-    opt.redirect = !( !_args[1]?.decode && !_args[0]?.decode );
+    opt.decode   = !( !arg[1]?.decode && !arg[0]?.decode );
+    opt.redirect = !( !arg[1]?.decode && !arg[0]?.decode );
 
-    opt.proxyIndex = _args[1]?.proxyIndex|| _args[0]?.proxyIndex|| 0;
-    opt.proxyList  = _args[1]?.proxyList || _args[0]?.proxyList || null;
-    process.chunkSize = _args[1]?.chunkSize || _args[0]?.chunkSize || Math.pow(10,6) * 3;
+    opt.proxyIndex = arg[1]?.proxyIndex|| arg[0]?.proxyIndex|| 0;
+    opt.proxyList  = arg[1]?.proxyList || arg[0]?.proxyList || null;
+    process.chunkSize = arg[1]?.chunkSize || arg[0]?.chunkSize || Math.pow(10,6) * 3;
 
     for( var i in headers ){
         const key = i.match(/\w+/gi).map(x=>{
@@ -131,25 +131,31 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    if( typeof opt.body == 'object' ){
-        opt.body = JSON.stringify(opt.body);
-        opt.headers['Content-Type'] = 'application/json';
-    } else if( (/^\?/i).test(opt.body) ){
-        opt.body = opt.body.replace(/^\?/i,'');
-        opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    } else if( (/^file:/i).test(opt.body) ){
-        const path = opt.body.replace(/^file:/i,'');
-        opt.headers['Content-Type'] = mimeType(path); opt.body = fs.readFileSync(path); 
-    } else if( !opt.headers['Content-Type'] ) { opt.headers['Content-Type'] = 'text/plain'; }   
-    opt.headers['Content-Length'] = Buffer.byteLength(opt.body); return opt;
+    //opt.headers['Content-Length'] = Buffer.byteLength(opt.body); 
+    if( !( opt.body instanceof stream ) ){
+        if( typeof opt.body == 'object' ){
+            opt.headers['Content-Type'] = 'application/json';
+            opt.body = stream.Readable.from( JSON.stringify(opt.body) );
+        } else if( (/^\?/i).test(opt.body) ){
+            opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            opt.body = stream.Readable.from( opt.body.replace(/^\?/i,'') );
+        } else if( (/^file:/i).test(opt.body) ){
+            const path = opt.body.replace(/^file:/i,'');
+            opt.headers['Content-Type'] = mimeType(path); 
+            opt.body = fs.createReadStream(path); 
+        } else if( !opt.headers['Content-Type'] ) { 
+            opt.headers['Content-Type'] = 'text/plain'; 
+            opt.body = stream.Readable.from( opt.body );
+        }   
+    }   return opt;
 }
 
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
-function fetch( ..._args ){
+function fetch( ...arg ){
     return new Promise((response,reject)=>{
 
-        let { opt,prot } = parseURL( _args );
+        let { opt,prot } = parseURL( arg );
         const range = opt.headers.range;
         delete opt.headers.host;
 
@@ -161,7 +167,7 @@ function fetch( ..._args ){
             try{
 
                 if( res.headers.location && opt.redirect ) { let newURL = '';
-                    const options = typeof _args[0]!='string' ? _args[0] : _args[1];
+                    const options = typeof arg[0]!='string' ? arg[0] : arg[1];
                     if( !(/^http/i).test(res.headers.location) )
                          newURL = `${opt.protocol}//${opt.hostname}${res.headers.location}`;
                     else newURL = res.headers.location; return response( await fetch(newURL,options) );
@@ -192,8 +198,9 @@ function fetch( ..._args ){
             } catch(e) { reject(e); }
         }).setTimeout( opt.timeout );
 
-        req.on('error',(e)=>{ reject(e); });
-        if(opt.body) req.write(opt.body); req.end();
+        req.on('error',(e)=>{ reject(e) });
+        if( opt.body ) opt.body.pipe(req);
+        req.end();
 
     });
 }
