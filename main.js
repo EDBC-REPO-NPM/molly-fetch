@@ -163,11 +163,11 @@ function parseURL( arg ){
     return { opt,prot };
 }
 
-function parseRange( range ){
-    const size = process.chunkSize;
+function parseRange( range, chunkSize ){
     const interval = range.match(/\d+/gi);
-    const chunk = Number(interval[0])+size;
-    return interval[1] ? range : range+chunk;
+	const start = Math.floor(+interval[0]/chunkSize)*chunkSize; 
+	const end = !interval[1] ? chunkSize+start : +interval[1];
+	return `bytes=${start}-${end}`;
 }
 
 function body( stream ){
@@ -221,11 +221,14 @@ function fetch( ...arg ){
     return new Promise((response,reject)=>{
 
         let { opt,prot } = parseURL( arg );
+        const size = +opt.headers['chunk-size'] || 
+                     Math.pow(10,6) * 10;
         const range = opt.headers.range;
+
         delete opt.headers.host;
 
-        if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
-            opt.headers.referer = opt.currentUrl; opt.headers.origin = opt.currentUrl;
+        if( opt.headers.range ) opt.headers.range = parseRange( opt.headers.range,size );
+            opt.headers.referer = opt.currentUrl;
         if( opt.body ){ opt = parseBody( opt ); }
 
         const req = new prot.request( opt,async(res) => {
