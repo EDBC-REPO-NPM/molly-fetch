@@ -199,17 +199,17 @@ function parseBody( opt ){
     //opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
     if( !( opt.body instanceof stream ) ){
         if( typeof opt.body == 'object' ){
-            opt.headers['Content-Type'] = 'application/json';
+            opt.headers['content-type'] = 'application/json';
             opt.body = stream.Readable.from( JSON.stringify(opt.body) );
         } else if( (/^\?/i).test(opt.body) ){
-            opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            opt.headers['content-type'] = 'application/x-www-form-urlencoded';
             opt.body = stream.Readable.from( opt.body.replace(/^\?/i,'') );
         } else if( (/^file:/i).test(opt.body) ){
             const path = opt.body.replace(/^file:/i,'');
-            opt.headers['Content-Type'] = mimeType(path);
+            opt.headers['content-type'] = mimeType(path);
             opt.body = fs.createReadStream(path);
-        } else if( !opt.headers['Content-Type'] ) {
-            opt.headers['Content-Type'] = 'text/plain';
+        } else if( !opt.headers['content-type'] ) {
+            opt.headers['content-type'] = 'text/plain';
             opt.body = stream.Readable.from( opt.body );
         }
     }   return opt;
