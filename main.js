@@ -222,6 +222,7 @@ function fetch( ...arg ){
 
         let { opt,prot } = parseURL( arg );
         const range = opt.headers.range;
+        delete opt.headers.host;
 
         if( opt.headers.range && !opt.headers.nochunked ) opt.headers.range = parseRange(opt.headers.range);
             opt.headers.referer = opt.currentUrl; opt.headers.origin = opt.currentUrl;
