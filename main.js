@@ -140,7 +140,7 @@ function parseURL( arg ){
     opt.response = arg[1]?.responseType || arg[0]?.responseType || 'json';
 
     opt.decode   = !( !arg[1]?.decode && !arg[0]?.decode );
-    opt.redirect = !( !arg[1]?.decode && !arg[0]?.decode );
+    opt.redirect =  ( !arg[1]?.redirect && !arg[0]?.redirect );
 
     opt.proxyIndex = arg[1]?.proxyIndex|| arg[0]?.proxyIndex|| 0;
     opt.proxyList  = arg[1]?.proxyList || arg[0]?.proxyList || null;
@@ -196,7 +196,6 @@ function decoding( req,res ){
 }
 
 function parseBody( opt ){
-    //opt.headers['Content-Length'] = Buffer.byteLength(opt.body);
     if( !( opt.body instanceof stream ) ){
         if( typeof opt.body == 'object' ){
             opt.headers['content-type'] = 'application/json';
@@ -266,9 +265,10 @@ function fetch( ...arg ){
             } catch(e) { reject(e); }
         }).setTimeout( opt.timeout );
 
-        req.on('error',(e)=>{ reject(e) });
-        if( opt.body ) opt.body.pipe(req);
-        req.end();
+        if( opt.body ) opt.body.pipe(req); else req.end();
+        req.on('error',(e)=>reject(e));
+        req.on('close',()=>req.end());
+
 
     });
 }
