@@ -235,8 +235,9 @@ function fetch( ...arg ){
 
                 if( res.headers.location && opt.redirect ) { let newURL = '';
                     const options = typeof arg[0]!='string' ? arg[0] : arg[1];
+                    const port = !opt.port ? '' : `:${opt.port}`;
                     if( !(/^http/i).test(res.headers.location) )
-                         newURL = `${opt.protocol}//${opt.hostname}${res.headers.location}`;
+                         newURL = `${opt.protocol}//${opt.hostname}${port}${res.headers.location}`;
                     else newURL = res.headers.location; return response( await fetch(newURL,options) );
                 }; const schema = {
                     request: req, response: res, config: opt,
