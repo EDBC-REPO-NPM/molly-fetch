@@ -223,12 +223,12 @@ function fetch( ...arg ){
         let { opt,prot } = parseURL( arg );
         const size = +opt.headers['chunk-size'] || 
                      Math.pow(10,6) * 10;
-        const range = opt.headers.range;
-
         delete opt.headers.host;
 
-        if( opt.headers.range ) opt.headers.range = parseRange( opt.headers.range,size );
+        if( opt.headers.range ) 
+            opt.headers.range = parseRange( opt.headers.range,size );
             opt.headers.referer = opt.currentUrl;
+            opt.headers.origin  = opt.currentUrl;
         if( opt.body ){ opt = parseBody( opt ); }
 
         const req = new prot.request( opt,async(res) => {
@@ -267,10 +267,10 @@ function fetch( ...arg ){
             } catch(e) { reject(e); }
         }).setTimeout( opt.timeout );
 
-        if( opt.body ) opt.body.pipe(req); else req.end();
+        if( opt.body && opt.method != 'POST' ) 
+            opt.body.pipe(req); else req.end();
         req.on('error',(e)=>reject(e));
         req.on('close',()=>req.end());
-
 
     });
 }
