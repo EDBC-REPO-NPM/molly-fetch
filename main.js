@@ -166,7 +166,8 @@ function parseURL( arg ){
 function parseRange( range, chunkSize ){
     const interval = range.match(/\d+/gi);
 	const start = Math.floor(+interval[0]/chunkSize)*chunkSize; 
-	const end = !interval[1] ? chunkSize+start : +interval[1];
+//  const end = !interval[1] ? chunkSize+start : +interval[1];
+    const end = chunkSize + start;
 	return `bytes=${start}-${end}`;
 }
 
