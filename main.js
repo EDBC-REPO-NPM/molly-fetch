@@ -134,17 +134,12 @@ function parseURL( arg ){
 
     opt.headers  = new Object();
     opt.body     = arg[1]?.body || arg[0]?.body || null;
-    opt.method   = arg[1]?.method || arg[0]?.method || 'GET';
-    tmp_headers  = arg[1]?.headers || arg[0]?.headers || new Object();
-    opt.timeout  = arg[1]?.timeout || arg[0]?.timeout || 100 * 60 * 1000 ;
-    opt.response = arg[1]?.responseType || arg[0]?.responseType || 'json';
-
     opt.decode   = !( !arg[1]?.decode && !arg[0]?.decode );
+    opt.method   = arg[1]?.method || arg[0]?.method || 'GET';
     opt.redirect =  ( !arg[1]?.redirect && !arg[0]?.redirect );
-
-    opt.proxyIndex = arg[1]?.proxyIndex|| arg[0]?.proxyIndex|| 0;
-    opt.proxyList  = arg[1]?.proxyList || arg[0]?.proxyList || null;
-    process.chunkSize = arg[1]?.chunkSize || arg[0]?.chunkSize || Math.pow(10,6) * 3;
+    opt.timeout  = arg[1]?.timeout || arg[0]?.timeout || undefined;
+    tmp_headers  = arg[1]?.headers || arg[0]?.headers || new Object();
+    opt.response = arg[1]?.responseType || arg[0]?.responseType || 'json';
 
     for( var i in headers ){
         const key = i.match(/\w+/gi).map(x=>{
@@ -180,14 +175,13 @@ function body( stream ){
 }
 
 function mimeType( _path ){
-	for(let key of Object.keys(mime)){
-		if( _path.endsWith(key) ) return mime[key];
-	}	return 'text/plain';
+	for(let key of Object.keys(mime)) if( _path.endsWith(key) ) 
+        return mime[key]; return 'text/plain';
 }
 
-function decoding( req,res ){
+function decoding( enc,res ){
     return new Promise(async(response,reject)=>{
-        const out = new stream.PassThrough(), err = (e)=>{ }; switch ( res.headers['content-encoding'] ) {
+        const out = new stream.PassThrough(), err = (e)=>{ }; switch ( enc ) {
             case 'br': await stream.pipeline(res,zlib.createBrotliDecompress(),out,err); response(out); break;
             case 'deflate': await stream.pipeline(res,zlib.createInflate(),out,err); response(out); break;
             case 'gzip': await stream.pipeline(res,zlib.createGunzip(),out,err); response(out); break;
@@ -215,6 +209,28 @@ function parseBody( opt ){
     }   return opt;
 }
 
+function parseRedirect( arg,opt,res ){
+    let u, o = typeof arg[0]!='string' ? arg[0] : arg[1];
+    const port = !opt.port ? '' : `:${opt.port}`;
+    if( !(/^http/i).test(res.headers.location) )
+         u = `${opt.protocol}//${opt.hostname}${port}${res.headers.location}`;
+    else u = res.headers.location; return { u,o };
+}
+
+function parseData( opt,res ){ 
+    return new Promise(async(response,reject)=>{
+        let data; const enc = res.headers['content-encoding'];
+        const out = !opt.decode ? res : await decoding(enc,res);
+        if( opt.response == 'buffer' ) data = Buffer.from( await body(out) );
+        else if( opt.response == 'text' ) data = await body(out);
+        else if( opt.response == 'stream' ) data = out;
+        else if( opt.response == 'json' ) try {
+            data = await body(out);
+            data = JSON.parse(data);
+        } catch(e) { } response(data);
+    });
+}
+
 /*--──────────────────────────────────────────────────────────────────────────────────────────────────────────────--*/
 
 function fetch( ...arg ){
@@ -234,40 +250,25 @@ function fetch( ...arg ){
         const req = new prot.request( opt,async(res) => {
             try{
 
-                if( res.headers.location && opt.redirect ) { let newURL = '';
-                    const options = typeof arg[0]!='string' ? arg[0] : arg[1];
-                    const port = !opt.port ? '' : `:${opt.port}`;
-                    if( !(/^http/i).test(res.headers.location) )
-                         newURL = `${opt.protocol}//${opt.hostname}${port}${res.headers.location}`;
-                    else newURL = res.headers.location; return response( await fetch(newURL,options) );
-                }; const schema = {
+                if( res.headers.location && opt.redirect ) { 
+                    const { u,o } = parseRedirect(arg,opt,res);
+                    return response( await fetch(u,o) );
+                }
+                
+                const schema = {
+                    data: await parseData( opt,res ),
                     request: req, response: res, config: opt,
                     status: res.statusCode, headers: res.headers,
-                }; const output = !opt.decode ? res : await decoding(req,res);
-
-                if( opt.response == 'buffer' ) schema.data = Buffer.from( await body(output) );
-                else if( opt.response == 'text' ) schema.data = await body(output);
-                else if( opt.response == 'stream' ) schema.data = output;
-                else if( opt.response == 'json' ) try {
-                    schema.data = await body(output);
-                    schema.data = JSON.parse(schema.data);
-                } catch(e) { }
-
-                if( res.statusCode >= 400 ){
-
-                    if(!opt?.proxyList ) return reject( schema );
-                    if( opt?.proxyIndex >= opt.proxyList?.length )
-                        return reject( schema );
-
-                    opt.proxy = opt.proxyList[ opt.proxyIndex ];
-                    opt.proxyIndex++;response(await fetch(opt));
-
-                } else return response( schema );
+                }; 
+                
+                if( res.statusCode >= 400 )
+                     return reject( schema );
+                else return response( schema );
 
             } catch(e) { reject(e); }
-        }).setTimeout( opt.timeout );
+        });
 
-        if( opt.body && opt.method != 'POST' ) 
+        if( opt.body && opt.method == 'POST' ) 
             opt.body.pipe(req); else req.end();
         req.on('error',(e)=>reject(e));
         req.on('close',()=>req.end());
