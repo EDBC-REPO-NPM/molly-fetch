@@ -137,18 +137,18 @@ function parseURL( arg ){
     opt.decode   = !( !arg[1]?.decode && !arg[0]?.decode );
     opt.method   = arg[1]?.method || arg[0]?.method || 'GET';
     opt.redirect =  ( !arg[1]?.redirect && !arg[0]?.redirect );
-    opt.timeout  = arg[1]?.timeout || arg[0]?.timeout || undefined;
+    opt.timeout  = arg[1]?.timeout || arg[0]?.timeout || (1000*60);
     tmp_headers  = arg[1]?.headers || arg[0]?.headers || new Object();
     opt.response = arg[1]?.responseType || arg[0]?.responseType || 'json';
 
-    for( var i in headers ){
+    for( let i in headers ){
         const key = i.match(/\w+/gi).map(x=>{
             const st = x.match(/^\w/gi).join('');
             return x.replace(st,st.toLowerCase());
         }).join('-'); opt.headers[key] = headers[i]
     }
 
-    for( var i in tmp_headers ){
+    for( let i in tmp_headers ){
         const key = i.match(/\w+/gi).map(x=>{
             const st = x.match(/^\w/gi).join('');
             return x.replace(st,st.toLowerCase());
