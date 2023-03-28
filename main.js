@@ -53,6 +53,7 @@ const mime = {
 	"gz"  : "application/gzip",
 	"sh"  : "application/x-sh",
 	"json": "application/json",
+	"wasm": "application/wasm",
 	"tar" : "application/x-tar",
 	"rar" : "application/vnd.rar",
 	"7z"  : "application/x-7z-compressed",
