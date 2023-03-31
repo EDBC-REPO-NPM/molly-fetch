@@ -176,8 +176,9 @@ function body( stream ){
 }
 
 function mimeType( _path ){
-	for(let key of Object.keys(mime)) if( _path.endsWith(key) ) 
-        return mime[key]; return 'text/plain';
+	for( let key of Object.keys(mime) ) if( _path.endsWith(key) )
+	return mime[key]; const type = _path.match(/\.\w+$/);
+	return `application/${type}`;
 }
 
 function decoding( enc,res ){
